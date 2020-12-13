@@ -1,7 +1,7 @@
 # Проект «Киноман» [![Check status][check-image]][check-url]
 
 * Студент: [Константин Полуянов](https://up.htmlacademy.ru/ecmascript/13/user/831377).
-* Наставник: `Неизвестно`.
+* Наставник: `Семён Якушев`.
 
 ---
 
