@@ -1,6 +1,5 @@
 export const card = () => {
-  return
-  `
+  return `
     <article class="film-card">
       <h3 class="film-card__title">The Great Flamarion</h3>
       <p class="film-card__rating">8.9</p>
@@ -17,6 +16,5 @@ export const card = () => {
         <button class="film-card__controls-item button film-card__controls-item--mark-as-watched" type="button">Mark as watched</button>
         <button class="film-card__controls-item button film-card__controls-item--favorite" type="button">Mark as favorite</button>
       </div>
-    </article>
-  `
+    </article>`;
 };
