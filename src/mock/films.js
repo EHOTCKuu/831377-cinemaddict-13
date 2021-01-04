@@ -1,11 +1,5 @@
 import dayjs from "dayjs";
-
-const getRandomInteger = (a = 0, b = 1) => {
-  const lower = Math.ceil(Math.min(a, b));
-  const upper = Math.floor(Math.max(a, b));
-
-  return Math.floor(lower + Math.random() * (upper - lower + 1));
-};
+import {getRandomInteger} from "./../utils";
 
 const getRandomData = (arr) => {
   const randomIndex = getRandomInteger(0, arr.length - 1);
@@ -112,6 +106,35 @@ const generatePoster = () => {
 
 };
 
+const comment = {
+  MAX_COUNT: 5,
+  MIN_COUNT: 0,
+  MESSAGES: [`Interesting setting and a good cast`, `Booooooooooring`, `Very very old. Meh`, `Almost two hours? Seriously?`, `Not so bad`],
+  EMOJIS: [`smile`, `sleeping`, `puke`, `angry`],
+  AUTHORS: [`John Doe`, `Doe John`, `John John`, `Doe Doe`, `John John Doe`],
+  DATES: [`2013/12/31 23:59`, `2010/10/01 10:10`, `2005/05/15 15:55`, `2020/09/29 22:09`, `2000/01/01 00:01`,
+  ],
+};
+
+const createComment = () => {
+  const messages = comment.MESSAGES;
+  const emojis = comment.EMOJIS;
+  const authors = comment.AUTHORS;
+  const dates = comment.DATES;
+
+  return {
+    message: messages[getRandomInteger(messages.length - 1)],
+    emoji: emojis[getRandomInteger(emojis.length - 1)],
+    author: authors[getRandomInteger(authors.length - 1)],
+    date: dates[getRandomInteger(dates.length - 1)]
+  };
+};
+
+const generateComments = ({MAX_COUNT: maxCount, MIN_COUNT: minCount}) => {
+  return new Array(getRandomInteger(maxCount, minCount)).fill().map(createComment.bind(null, Comment));
+};
+
+
 export const generateFilm = () => {
   return {
     title: generateTitle(),
@@ -132,18 +155,6 @@ export const generateFilm = () => {
     addToWatchlist: Boolean(getRandomInteger(0, 1)),
     alredyWatched: Boolean(getRandomInteger(0, 1)),
     addToFavorites: Boolean(getRandomInteger(0, 1)),
-    commentsCount: `${getRandomInteger(0, 5)} comments`
+    comments: generateComments(comment)
   };
-};
-
-export const generateComents = () => {
-  return [
-    {
-      id: 1,
-      text: ``,
-      emoji: `smile`,
-      authorName: ``,
-      date: `2019/12/31 23:59`,
-    }
-  ];
 };
