@@ -11,7 +11,7 @@ import UserMock from './mock/user';
 import {render} from './util.js';
 import {renderCard} from './render-card';
 
-const MOCK_FILMS = 0;
+const MOCK_FILMS = 15;
 const FILMS_CARDS_NUMBER = 5;
 const FILMS_STEP_LOAD = 5;
 const FILMS_TOP_RAITED_CARDS_NUMBER = 2;
