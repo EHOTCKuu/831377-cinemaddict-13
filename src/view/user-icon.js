@@ -1,4 +1,4 @@
-import {createElement} from '../util.js';
+import AbstractView from './abstract-view';
 
 const createUserIcon = (avatar, raiting) => {
   return `<section class="header__profile profile">
@@ -7,25 +7,14 @@ const createUserIcon = (avatar, raiting) => {
 </section>`;
 };
 
-export default class UserIcon {
+export default class UserIcon extends AbstractView {
   constructor(avatar, raiting) {
-    this._element = null;
+    super();
     this._userRaiting = raiting;
-    this._userAvater = avatar;
+    this._userAvatar = avatar;
   }
 
   getTemplate() {
-    return createUserIcon(this._userAvater, this._userRaiting);
-  }
-
-  getElement() {
-    if (!this._element) {
-      this._element = createElement(this.getTemplate());
-    }
-    return this._element;
-  }
-
-  removeElement() {
-    this._element = null;
+    return createUserIcon(this._userAvatar, this._userRaiting);
   }
 }
