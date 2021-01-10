@@ -3,28 +3,39 @@ import FilmPopupView from './view/film-popup';
 import FilmCardView from './view/film-card';
 
 const pageBody = document.querySelector(`body`);
+let popup;
 
 export const renderCard = (container, film) => {
-  const card = new FilmCardView(film).getElement();
+  const card = new FilmCardView(film);
 
   const closePopup = () => {
-    const popup = pageBody.querySelector(`.film-details`);
-    popup.remove();
-    popup.querySelector(`.film-details__close-btn`).removeEventListener(`click`, onPopupCrossClick);
-    document.removeEventListener(`keyup`, onPopupEscPress);
-    pageBody.classList.remove(`hide-overflow`);
+    if (pageBody.querySelector(`.film-details`)) {
+      popup.getElement().remove();
+      document.removeEventListener(`keyup`, onPopupEscPress);
+      pageBody.classList.remove(`hide-overflow`);
+    }
   };
 
-  const onCardClick = (evt) => {
+  const openPopup = (evt) => {
     evt.preventDefault();
-    if (pageBody.querySelector(`.film-details`)) {
-      closePopup();
-    }
-    const popup = new FilmPopupView(film).getElement();
+    closePopup();
+    popup = new FilmPopupView(film);
     render(pageBody, popup);
-    popup.querySelector(`.film-details__close-btn`).addEventListener(`click`, onPopupCrossClick);
+    popup.setCrossClickHandler(onPopupCrossClick);
     document.addEventListener(`keyup`, onPopupEscPress);
     pageBody.classList.add(`hide-overflow`);
+  };
+
+  const onCardPosterClick = (evt) => {
+    openPopup(evt);
+  };
+
+  const onCardTitleClick = (evt) => {
+    openPopup(evt);
+  };
+
+  const onCardCommentsClick = (evt) => {
+    openPopup(evt);
   };
 
   const onPopupEscPress = (evt) => {
@@ -35,9 +46,9 @@ export const renderCard = (container, film) => {
     closePopup();
   };
 
-  card.querySelector(`.film-card__poster`).addEventListener(`click`, onCardClick);
-  card.querySelector(`.film-card__title`).addEventListener(`click`, onCardClick);
-  card.querySelector(`.film-card__comments`).addEventListener(`click`, onCardClick);
+  card.setPosterClickHandler(onCardPosterClick);
+  card.setTitleClickHandler(onCardTitleClick);
+  card.setCommentsClickHandler(onCardCommentsClick);
 
   render(container, card);
 };
