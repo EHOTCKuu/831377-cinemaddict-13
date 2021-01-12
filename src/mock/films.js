@@ -103,8 +103,11 @@ const generateRandomSet = (array) => {
   return Array.from(new Set(newArr));
 };
 
+const generateId = () => Date.now() + parseInt(Math.random() * 10000, 10);
+
 export default class MockFilm {
   constructor() {
+    this._id = generateId();
     this._filmIndex = getRandomInteger(0, FILMS.length - 1);
     this._poster = FILMS[this._filmIndex].poster;
     this._title = FILMS[this._filmIndex].title;
@@ -118,12 +121,16 @@ export default class MockFilm {
     this._director = DIRECTORS[getRandomInteger(0, DIRECTORS.length - 1)];
     this._writers = generateRandomSet(WRITERS);
     this._actors = generateRandomSet(ACTORS);
+    this._isInWatchlist = Boolean(getRandomInteger(0, 1));
+    this._isInHistory = Boolean(getRandomInteger(0, 1));
+    this._isFavourite = Boolean(getRandomInteger(0, 1));
     this._country = COUNTRIES[getRandomInteger(0, COUNTRIES.length - 1)];
     this._age = AGES[getRandomInteger(0, AGES.length - 1)];
   }
 
   getNewFilm() {
     return {
+      id: this._id,
       poster: this._poster,
       title: this._title,
       originalTitle: this._originalTitle,
@@ -132,6 +139,9 @@ export default class MockFilm {
       duration: this._duration,
       genre: this._genre,
       description: this._description,
+      isInWatchlist: this._isInWatchlist,
+      isInHistory: this._isInHistory,
+      isFavourite: this._isFavourite,
       comments: this._comments,
       director: this._director,
       writers: this._writers,
