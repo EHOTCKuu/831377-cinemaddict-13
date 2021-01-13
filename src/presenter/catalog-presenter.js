@@ -17,11 +17,7 @@ export default class Catalog {
     this._mostCommentedContainerView = new MostCommentedContainerView();
     this._userIconView = null;
     this._siteMenuView = null;
-    this._sortType = {
-      current: SortType.DEFAULT,
-      date: SortType.UP,
-      raiting: SortType.UP
-    };
+    this._currentSortType = SortType.DEFAULT;
     this._siteCatalog = null;
     this._filmCardPresenterGroups = {
       catalog: {},
@@ -34,6 +30,7 @@ export default class Catalog {
     this._FILMS_TOP_RAITED_CARDS_NUMBER = 2;
     this._FILMS_MOST_COMMENTED_CARDS_NUMBER = 2;
     this._renderedFilms = this._FILMS_CARDS_NUMBER;
+    this._filmsSortedByDate = null;
 
     this._onShowMoreButtonClick = this._onShowMoreButtonClick.bind(this);
     this._onSortTypeChange = this._onSortTypeChange.bind(this);
@@ -41,18 +38,17 @@ export default class Catalog {
     this._onUserPropertyChange = this._onUserPropertyChange.bind(this);
   }
 
-  init(films, user) {
+  init(films, user, container) {
     this._films = films;
     this._user = user;
+    this._siteMain = container;
     this._presenterGroupNames = Object.keys(this._filmCardPresenterGroups);
     this._userIconView = new UserIconView(this._user.avatar, this._user.raiting);
     this._siteMenuView = new SiteMenuView(this._films);
     this._sourcedFilms = films.slice();
 
-    const siteHeader = document.querySelector(`.header`);
-    render(siteHeader, this._userIconView);
+    render(this._siteMain.parentElement.querySelector(`.header`), this._userIconView);
 
-    this._siteMain = document.querySelector(`.main`);
     render(this._siteMain, this._siteMenuView, `afterbegin`);
 
     this._renderCatalog();
@@ -118,35 +114,38 @@ export default class Catalog {
   _changeSort(type) {
     switch (type) {
       case SortType.RAITING:
-        if (this._sortType.raiting === SortType.DOWN) {
-          this._films = this._filmsSortedByRaiting.reverse();
-          this._sortType.raiting = SortType.UP;
-          break;
-        }
         this._films = this._filmsSortedByRaiting;
-        this._sortType.raiting = SortType.DOWN;
         break;
       case SortType.DEFAULT:
         this._films = this._sourcedFilms;
         break;
       case SortType.DATE:
 
-        if (this._sortType.date === SortType.DOWN) {
-          this._films = this._filmsSortedByDate.reverse();
-          this._sortType.date = SortType.UP;
-          break;
+        if (!this._filmsSortedByDate) {
+          this._filmsSortedByDate = this._films.slice().sort((previous, current) => {
+            return current.date - previous.date;
+          });
         }
         this._films = this._filmsSortedByDate;
-        this._sortType.date = SortType.DOWN;
         break;
     }
-    this._sortType.current = type;
+    this._currentSortType = type;
   }
 
   _onSortTypeChange(type) {
-    if (this._sortType.current === SortType.DEFAULT && type === SortType.DEFAULT) {
+    if (this._currentSortType === type) {
       return;
     }
+    if (!this._sortButtons) {
+      this._sortButtons = Array.from(this._siteSortView.getElement().querySelectorAll(`.sort__button`));
+    }
+    this._sortButtons.forEach((sortButton) => {
+      if (sortButton.dataset.sortType === type) {
+        sortButton.classList.add(`sort__button--active`);
+        return;
+      }
+      sortButton.classList.remove(`sort__button--active`);
+    });
     this._changeSort(type);
     this._clearCatalog();
     this._renderCatalog();
@@ -205,12 +204,6 @@ export default class Catalog {
     }
   }
 
-  _generateFilmsSortedByDate() {
-    this._filmsSortedByDate = this._films.slice().sort((previous, current) => {
-      return current.date - previous.date;
-    });
-  }
-
   _renderCatalog() {
     if (!(this._siteCatalog)) {
       this._siteCatalog = new SiteCatalogView();
@@ -231,7 +224,6 @@ export default class Catalog {
 
     this._renderTopRaitedContainer();
     this._renderMostCommentedContainer();
-    this._generateFilmsSortedByDate();
     this._renderTopRaitedFilms();
     this._renderMostCommentedFilms();
   }

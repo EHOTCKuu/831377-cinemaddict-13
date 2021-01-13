@@ -7,12 +7,14 @@ import CatalogPresenter from './presenter/catalog-presenter';
 const MOCK_FILMS = 15;
 const AVAILABLE_FILMS = `123 456`;
 
+const siteMain = document.querySelector(`.main`);
+
 const films = new Array(MOCK_FILMS).fill().map(() => {
   return new MockFilm().getNewFilm();
 });
 const user = new UserMock().userStats;
 const presenter = new CatalogPresenter();
-presenter.init(films, user);
+presenter.init(films, user, siteMain);
 
 const siteFooter = document.querySelector(`.footer`);
 const footerStats = siteFooter.querySelector(`.footer__statistics`);
