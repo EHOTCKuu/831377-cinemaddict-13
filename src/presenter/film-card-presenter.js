@@ -1,5 +1,5 @@
 import FilmCardView from '../view/film-card';
-import {replace, remove, render} from '../util.js';
+import {replace, remove, render, isKeyPressed} from '../util.js';
 import FilmPopupView from '../view/film-popup';
 
 export default class CardPresenter {
@@ -117,7 +117,7 @@ export default class CardPresenter {
   }
 
   _onPopupEscPress(evt) {
-    isKeyPressed(evt, this.closePopup, `Esc`);
+    isKeyPressed(evt, this.closePopup, `Escape`);
   }
 
   _onPopupCrossClick() {
