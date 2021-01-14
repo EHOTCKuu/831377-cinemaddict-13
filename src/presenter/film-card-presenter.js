@@ -1,5 +1,7 @@
-import FilmCardView from '../view/film-card';
+import {CATEGORIES} from "../const.js";
 import {replace, remove, render, isKeyPressed} from '../util.js';
+
+import FilmCardView from '../view/film-card';
 import FilmPopupView from '../view/film-popup';
 
 export default class CardPresenter {
@@ -12,7 +14,7 @@ export default class CardPresenter {
     this._closePopups = closePopupsCb;
     this._pageBody = document.querySelector(`body`);
     this._popup = null;
-
+    this.cardUpdateHandler = this.cardUpdateHandler.bind(this);
     this.closePopup = this.closePopup.bind(this);
     this._openPopup = this._openPopup.bind(this);
     this._onCardPosterClick = this._onCardPosterClick.bind(this);
@@ -67,7 +69,7 @@ export default class CardPresenter {
   _openPopup(evt) {
     evt.preventDefault();
     this._closePopups();
-    this._popup = new FilmPopupView(this._film);
+    this._popup = new FilmPopupView(this._film, this.cardUpdateHandler);
     render(this._pageBody, this._popup);
     this._popup.setCrossClickHandler(this._onPopupCrossClick);
     document.addEventListener(`keyup`, this._onPopupEscPress);
@@ -106,6 +108,20 @@ export default class CardPresenter {
 
   _onCardPosterClick(evt) {
     this._openPopup(evt);
+  }
+
+  cardUpdateHandler(category) {
+    switch (category) {
+      case CATEGORIES.WATCHLIST:
+        this._onCardWatchlistClick();
+        break;
+      case CATEGORIES.HISTORY:
+        this._onCardToHistoryClick();
+        break;
+      case CATEGORIES.FAVOURITES:
+        this._onCardFavouritesClick();
+        break;
+    }
   }
 
   _onCardTitleClick(evt) {
