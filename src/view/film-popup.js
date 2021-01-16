@@ -164,9 +164,9 @@ export default class FilmPopup extends Smart {
     if (evt.target.tagName !== `INPUT` || evt.target.value === this._data.chosenSmile) {
       return;
     }
-    this._renderComments();
     this._getScroll();
     this.updateData({chosenSmile: evt.target.value});
+    this._renderComments();
     this.scrollToY();
   }
 
