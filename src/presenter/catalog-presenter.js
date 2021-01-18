@@ -251,7 +251,7 @@ export default class Catalog {
       this._renderLoading();
       return;
     }
-    
+
     if (!(this._siteCatalog)) {
       this._siteCatalog = new SiteCatalogView();
     }
