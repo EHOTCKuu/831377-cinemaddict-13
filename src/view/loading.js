@@ -10,6 +10,6 @@ const createLoading = () => {
 
 export default class Loading extends AbstractView {
   getTemplate() {
-    return createLoading(this._film);
+    return createLoading();
   }
 }

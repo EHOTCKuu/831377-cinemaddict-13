@@ -189,15 +189,20 @@ export default class CardPresenter {
     }
   }
 
+  _renderComment(comment) {
+    const commentPresenter = new CommentPresenter(this.onViewAction, comment);
+    commentPresenter.init(this._popup.getElement().querySelector(`.film-details__comments-list`));
+    this._commentPresenters[comment.id] = commentPresenter;
+  }
+
   _renderCommentsToPopup() {
-    const comments = this._commentsModel.getComments();
-
-    this._film.comments.forEach((commentId) => {
-      const comment = comments.find((recievedComment) => (String(recievedComment.id) === String(commentId)));
-
-      const commentPresenter = new CommentPresenter(this.onViewAction, comment);
-      commentPresenter.init(this._popup.getElement().querySelector(`.film-details__comments-list`));
-      this._commentPresenters[comment.id] = commentPresenter;
+    this._commentsModel.getComments(this._film.id)
+    .then((comments) => {
+      comments.forEach((comment) => {
+        this._renderComment(comment);
+      });
+    }).catch(() => {
+      this._renderComment(this._commentsModel.getErrorComment());
     });
   }
 

@@ -15,6 +15,7 @@ export const ModelMethod = {
   UPDATE_FILM: `updateFilm`,
   UPDATE_FILTER: `updateFilter`,
   ADD_COMMENT: `addComment`,
+  SET_FILMS: `setFilms`,
   DELETE_COMMENT: `deleteComment`
 };
 
