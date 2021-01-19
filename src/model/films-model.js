@@ -2,16 +2,19 @@ import Observer from './observer';
 import {ModelMethod} from '../const';
 
 export default class FilmModel extends Observer {
-  constructor() {
+  constructor(api) {
     super();
+    this._api = api;
     this._films = [];
     this._observers = {
-      updateFilm: []
+      updateFilm: [],
+      setFilms: []
     };
   }
 
   setFilms(films) {
     this._films = films.slice();
+    this.notify(ModelMethod.SET_FILMS, films);
   }
 
   getFilms() {
@@ -19,13 +22,11 @@ export default class FilmModel extends Observer {
   }
 
   updateFilm(elementToUpdate) {
-    const index = this._films.findIndex((element) => element.id === elementToUpdate.id);
-    if (index === -1) {
-      throw new Error(`Film doesn't exist`);
-    }
+    this._api.updateFilm(elementToUpdate).then((updatedFilm) => {
+      const index = this._films.findIndex((element) => element.id === updatedFilm.id);
+      this._films.splice(index, 1, updatedFilm);
 
-    this._films.splice(index, 1, elementToUpdate);
-
-    this.notify(ModelMethod.UPDATE_FILM, elementToUpdate);
+      this.notify(ModelMethod.UPDATE_FILM, updatedFilm);
+    });
   }
 }

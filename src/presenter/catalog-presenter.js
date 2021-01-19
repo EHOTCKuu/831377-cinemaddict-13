@@ -2,7 +2,7 @@ import {render, remove, filter} from '../util.js';
 import {SortType, UserAction, ModelMethod} from "../const.js";
 
 import UserIconView from '../view/user-icon';
-import SiteMenuView from '../view/site-menu';
+import LoadingView from '../view/loading';
 import SiteSortView from '../view/site-sort';
 import SiteCatalogView from '../view/films-catalog';
 import ShowMoreButtonView from '../view/show-more-button';
@@ -23,14 +23,18 @@ export default class Catalog {
     this._onViewAction = this._onViewAction.bind(this);
     this._onfilmUpdate = this._onfilmUpdate.bind(this);
     this._onFilterUpdate = this._onFilterUpdate.bind(this);
+    this._onFilmsLoad = this._onFilmsLoad.bind(this);
     this._filmsModel.addObserver(ModelMethod.UPDATE_FILM, this._onfilmUpdate);
+    this._filmsModel.addObserver(ModelMethod.SET_FILMS, this._onFilmsLoad);
     this._filterModel.addObserver(ModelMethod.UPDATE_FILTER, this._onFilterUpdate);
     this._siteSortView = null;
     this._noFilmsView = null;
     this._userIconView = null;
     this._siteMenuView = null;
     this._currentSortType = SortType.DEFAULT;
+    this._isLoading = true;
     this._siteCatalog = null;
+    this._loadingView = new LoadingView();
     this._filmCardPresenterGroups = {
       catalog: {},
       raited: {},
@@ -53,7 +57,6 @@ export default class Catalog {
     this._siteMain = container;
     this._presenterGroupNames = Object.keys(this._filmCardPresenterGroups);
     this._userIconView = new UserIconView(this._user.avatar, this._user.raiting);
-    this._siteMenuView = new SiteMenuView(this._getFilms());
 
     render(this._siteMain.parentElement.querySelector(`.header`), this._userIconView);
 
@@ -79,6 +82,12 @@ export default class Catalog {
     });
   }
 
+  _onFilmsLoad() {
+    this._isLoading = false;
+    remove(this._loadingView);
+    this._renderCatalog();
+  }
+
   _clearCatalog({resetRenderedFilms = false, resetSort = false} = {}) {
     this._presenterGroupNames.forEach((presenterGroup) => {
       Object.values(this._filmCardPresenterGroups[presenterGroup]).forEach((presenter) => presenter.destroy());
@@ -88,6 +97,7 @@ export default class Catalog {
     remove(this._siteSortView);
     remove(this._noFilmsView);
     remove(this._showMoreButton);
+    remove(this._loadingView);
 
     if (resetRenderedFilms) {
       this._renderedFilms = this._FILMS_CARDS_NUMBER;
@@ -98,6 +108,10 @@ export default class Catalog {
     if (resetSort) {
       this._currentSortType = SortType.DEFAULT;
     }
+  }
+
+  _renderLoading() {
+    render(this._siteMain, this._loadingView);
   }
 
   _renderNoFilms() {
@@ -233,6 +247,11 @@ export default class Catalog {
   }
 
   _renderCatalog() {
+    if (this._isLoading) {
+      this._renderLoading();
+      return;
+    }
+
     if (!(this._siteCatalog)) {
       this._siteCatalog = new SiteCatalogView();
     }
