@@ -5,12 +5,10 @@ import CommentPresenter from './comment-presenter';
 
 import FilmCardView from '../view/film-card';
 import FilmPopupView from '../view/film-popup';
-
-import {generateId} from '../mock/description';
-
 export default class CardPresenter {
-  constructor(commentsModel, filmChangeCb, closePopupsCb) {
+  constructor(commentsModel, filmChangeCb, closePopupsCb, filterModel) {
     this._commentsModel = commentsModel;
+    this._filterModel = filterModel;
 
     this._commentPresenters = {};
     this._closePopups = closePopupsCb;
@@ -97,7 +95,8 @@ export default class CardPresenter {
   }
 
   _onCardWatchlistClick() {
-    this._filmChange(UserAction.UPDATE_FILM_CATEGORY, Object.assign(
+    const action = (this._filterModel.getFilter() !== CATEGORIES.All && this._film.isInWatchlist) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
+    this._filmChange(action, Object.assign(
         {},
         this._film,
         {
@@ -107,7 +106,8 @@ export default class CardPresenter {
   }
 
   _onCardFavouritesClick() {
-    this._filmChange(UserAction.UPDATE_FILM_CATEGORY, Object.assign(
+    const action = (this._filterModel.getFilter() !== CATEGORIES.All && this._film.isInWatchlist) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
+    this._filmChange(action, Object.assign(
         {},
         this._film,
         {
@@ -119,10 +119,12 @@ export default class CardPresenter {
   onViewAction(eventType, update) {
     switch (eventType) {
       case UserAction.DELETE_COMMENT:
-        this._commentsModel.deleteComment(update);
+        this._commentsModel.deleteComment(update)
+        .catch(() => this._onCommentDeleteError(update.id));
         break;
       case UserAction.ADD_COMMENT:
-        this._commentsModel.addComment(update);
+        this._commentsModel.addComment(update, this._film.id)
+        .catch(() => this._onCommentAddError());
         break;
     }
   }
@@ -137,7 +139,7 @@ export default class CardPresenter {
 
       this._popup.scrollToY();
 
-      this._filmChange(UserAction.UPDATE_FILM_CATEGORY, Object.assign(
+      this._filmChange(UserAction.REPLACE_FILM, Object.assign(
           {},
           this._film,
           {
@@ -145,47 +147,55 @@ export default class CardPresenter {
           }
       ));
     }
+  }
+
+  _onCommentDeleteError(commentId) {
+    this._commentPresenters[commentId].disableDeleteButton();
+    this._commentPresenters[commentId].shake();
   }
 
   _onCommentAdd(evt) {
     if (evt.keyCode === 13 && evt.ctrlKey) {
-      if (this._popup.getNewCommentData() === null) {
+      const commentData = this._popup.getNewCommentData();
+      if (commentData === null) {
         return;
       }
       const comment = Object.assign({},
-          this._popup.getNewCommentData(),
+      commentData,
           {
-            id: generateId(),
-            date: new Date(),
-            author: `local user`
+            date: new Date()
           });
-      this._popup.clearInput();
+      this._popup.disableCommentInputs();
       this.onViewAction(UserAction.ADD_COMMENT, comment);
     }
   }
 
-  addComment(comment) {
-    if (this._popup) {
+  _onCommentAddError() {
+    this._popup.disableCommentInputs();
+    this._popup.shake();
+  }
 
-      const commentPresenter = new CommentPresenter(this.onViewAction, comment);
-      this._commentPresenters[comment.id] = commentPresenter;
+  addComment(response) {
+    if (this._popup) {
+      const comments = response.comments;
+      const film = response.movie;
+
+      this._commentPresenters = {};
+
+      comments.forEach((comment) => {
+        const commentPresenter = new CommentPresenter(this.onViewAction, comment);
+        this._commentPresenters[comment.id] = commentPresenter;
+      });
+
+      this._popup.clearInput();
 
       this._popup.changeComment(Object.keys(this._commentPresenters));
 
-      this._renderCommentsToPopup();
-      commentPresenter.init(this._popup.getElement().querySelector(`.film-details__comments-list`));
+      Object.values(this._commentPresenters).forEach((commentPresenter) => commentPresenter.init(this._popup.getElement().querySelector(`.film-details__comments-list`)));
 
       this._popup.scrollToY();
 
-
-      this._filmChange(UserAction.UPDATE_FILM_CATEGORY, Object.assign(
-          {},
-          this._film,
-          {
-            comments: Object.keys(this._commentPresenters)
-          }
-      ));
-
+      this._filmChange(UserAction.REPLACE_FILM, film);
     }
   }
 
@@ -195,19 +205,22 @@ export default class CardPresenter {
     this._commentPresenters[comment.id] = commentPresenter;
   }
 
-  _renderCommentsToPopup() {
-    this._commentsModel.getComments(this._film.id)
+  _renderCommentsToPopup(isOldCommentsNeeded = false) {
+    this._commentsModel.getComments(this._film.id, isOldCommentsNeeded)
     .then((comments) => {
       comments.forEach((comment) => {
         this._renderComment(comment);
       });
-    }).catch(() => {
+    })
+    .then(() => this._popup.scrollToY())
+    .catch(() => {
       this._renderComment(this._commentsModel.getErrorComment());
     });
   }
 
   _onCardToHistoryClick() {
-    this._filmChange(UserAction.UPDATE_FILM_CATEGORY, Object.assign(
+    const action = (this._filterModel.getFilter() !== CATEGORIES.All && this._film.isInHistory) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
+    this._filmChange(action, Object.assign(
         {},
         this._film,
         {

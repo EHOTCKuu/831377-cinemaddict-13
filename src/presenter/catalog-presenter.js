@@ -1,7 +1,6 @@
 import {render, remove, filter} from '../util.js';
 import {SortType, UserAction, ModelMethod} from "../const.js";
 
-import UserIconView from '../view/user-icon';
 import LoadingView from '../view/loading';
 import SiteSortView from '../view/site-sort';
 import SiteCatalogView from '../view/films-catalog';
@@ -56,17 +55,15 @@ export default class Catalog {
     this._user = user;
     this._siteMain = container;
     this._presenterGroupNames = Object.keys(this._filmCardPresenterGroups);
-    this._userIconView = new UserIconView(this._user.avatar, this._user.raiting);
-
-    render(this._siteMain.parentElement.querySelector(`.header`), this._userIconView);
 
     this._renderCatalog();
   }
 
   _updatePresenters(film) {
     this._presenterGroupNames.forEach((presenterGroup) => {
-      if (this._filmCardPresenterGroups[presenterGroup][film.id]) {
-        this._filmCardPresenterGroups[presenterGroup][film.id].init(film);
+      const filmPresenter = this._filmCardPresenterGroups[presenterGroup][film.id];
+      if (filmPresenter) {
+        filmPresenter.init(film);
       }
     });
   }
@@ -148,6 +145,16 @@ export default class Catalog {
       case UserAction.UPDATE_FILM_CATEGORY:
         this._filmsModel.updateFilm(update);
         break;
+      case UserAction.REPLACE_FILM:
+        this._filmsModel.replaceFilm(update);
+        break;
+      case UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER:
+        this._filmsModel.updateFilm(update, false)
+        .then(() => {
+          this._clearCatalog();
+          this._renderCatalog();
+        });
+        break;
     }
   }
 
@@ -165,7 +172,7 @@ export default class Catalog {
   }
 
   _renderCard(container, film, block) {
-    const filmPresenter = new FilmCardPresenter(this._commentsModel, this._onViewAction, this._closeAllPopups);
+    const filmPresenter = new FilmCardPresenter(this._commentsModel, this._onViewAction, this._closeAllPopups, this._filterModel);
     filmPresenter.init(film, container);
     switch (block) {
       case `raited`:
@@ -233,6 +240,9 @@ export default class Catalog {
   }
 
   _renderTopRaitedFilms() {
+    if (this._getFilms(SortType.RAITING)[0].raiting === 0) {
+      return;
+    }
     const topRaitedFilmsContainer = this._siteCatalog.getElement().querySelector(`.films-list--extra .films-list__container`);
     for (let i = 0; i < Math.min(this._FILMS_TOP_RAITED_CARDS_NUMBER, this._getFilms(SortType.RAITING).length); i++) {
       this._renderCard(topRaitedFilmsContainer, this._getFilms(SortType.RAITING)[i], `raited`);
@@ -240,6 +250,9 @@ export default class Catalog {
   }
 
   _renderMostCommentedFilms() {
+    if (this._getFilms(SortType.COMMENTS)[0].comments.length === 0) {
+      return;
+    }
     const mostCommentedFilmsContainer = this._siteCatalog.getElement().querySelector(`.films-list--commented .films-list__container`);
     for (let i = 0; i < Math.min(this._FILMS_MOST_COMMENTED_CARDS_NUMBER, this._getFilms(SortType.COMMENTS).length); i++) {
       this._renderCard(mostCommentedFilmsContainer, this._getFilms(SortType.COMMENTS)[i], `commented`);
