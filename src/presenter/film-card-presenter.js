@@ -161,7 +161,7 @@ export default class CardPresenter {
         return;
       }
       const comment = Object.assign({},
-      commentData,
+          commentData,
           {
             date: new Date()
           });
