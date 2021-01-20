@@ -59,6 +59,16 @@ export const updateUserPropertyArray = (idArr, filmId) => {
   return idArr;
 };
 
+export const getDuration = (duration) => {
+  const hours = duration / 60;
+  const minutes = duration % 60;
+  if (hours < 1) {
+    return `${minutes}m`;
+  } else {
+    return `${Math.floor(hours)}h ${minutes}m`;
+  }
+};
+
 export const replace = (newElement, oldElement) => {
   if (newElement instanceof AbstractView) {
     newElement = newElement.getElement();

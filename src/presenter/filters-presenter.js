@@ -17,6 +17,7 @@ export default class Filters {
     this._filterModel.addObserver(ModelMethod.UPDATE_FILTER, this._changeFilter);
     this._filmsModel.addObserver(ModelMethod.UPDATE_FILM, this._onFilmChange);
     this._filmsModel.addObserver(ModelMethod.SET_FILMS, this._onFilmChange);
+    this._filmsModel.addObserver(ModelMethod.UPDATE_FILM_WITH_RERENDER, this._onFilmChange);
   }
 
   init(container = this.container) {
@@ -48,6 +49,7 @@ export default class Filters {
 
   _onFilmChange() {
     this.init();
+    this._filtersButtons = null;
   }
 
   _changeFilter(newFilter) {

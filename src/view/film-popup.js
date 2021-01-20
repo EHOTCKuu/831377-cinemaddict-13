@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 
-import {CATEGORIES} from '../const.js';
-import {EMOTIONS, EMOTION_PICS} from '../const.js';
+import {EMOTIONS, EMOTION_PICS, CATEGORIES} from '../const.js';
+import {getDuration} from '../util';
 
 import Smart from './smart-view';
 
@@ -68,7 +68,7 @@ const createFilmPopup = (data) => {
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Runtime</td>
-              <td class="film-details__cell">${duration}</td>
+              <td class="film-details__cell">${getDuration(duration)}</td>
             </tr>
             <tr class="film-details__row">
               <td class="film-details__term">Country</td>
@@ -115,12 +115,15 @@ const createFilmPopup = (data) => {
 </section>`;
 };
 
+const SHAKE_DURATION = 500;
+
 export default class FilmPopup extends Smart {
   constructor(film, cardUpdateHandler, renderCommentsCb) {
     super();
     this._renderComments = renderCommentsCb;
     this._cardUpdateHandler = cardUpdateHandler;
     this._data = this._parseFilmTodata(film);
+    this._isCommentFormDisabled = false;
     this._crossClickHandler = this._crossClickHandler.bind(this);
     this._commentChangeHandler = this._commentChangeHandler.bind(this);
     this._emojiInputClickHandler = this._emojiInputClickHandler.bind(this);
@@ -166,8 +169,7 @@ export default class FilmPopup extends Smart {
     }
     this._getScroll();
     this.updateData({chosenSmile: evt.target.value});
-    this._renderComments();
-    this.scrollToY();
+    this._renderComments(true);
   }
 
   changeComment(sentComments) {
@@ -207,17 +209,16 @@ export default class FilmPopup extends Smart {
     if (!this._data.chosenSmile || !this._data.userComment) {
       return null;
     }
-    const emotion = this._data.chosenSmile;
-    const text = this._data.userComment;
     return {
-      text,
-      emotion
+      text: this._data.userComment,
+      emotion: this._data.chosenSmile
     };
   }
 
   clearInput() {
     this._data.chosenSmile = null;
     this._data.userComment = null;
+    this._isCommentFormDisabled = false;
   }
 
   scrollToY() {
@@ -236,5 +237,21 @@ export default class FilmPopup extends Smart {
   setCrossClickHandler(cb) {
     this._callback.crossClick = cb;
     this.getElement().querySelector(`.film-details__close-btn`).addEventListener(`click`, this._crossClickHandler);
+  }
+
+  disableCommentInputs() {
+    this.getElement().querySelector(`.film-details__comment-input`).disabled = !this._isCommentFormDisabled;
+    Array.from(this.getElement().querySelectorAll(`.film-details__emoji-item`)).forEach((input) => {
+      input.disabled = !this._isCommentFormDisabled;
+    });
+    this._isCommentFormDisabled = !this._isCommentFormDisabled;
+  }
+
+  shake() {
+    const commentForm = this.getElement().querySelector(`.film-details__new-comment`);
+    commentForm.style.animation = `shake ${SHAKE_DURATION / 1000}s`;
+    setTimeout(() => {
+      commentForm.style.animation = ``;
+    }, SHAKE_DURATION);
   }
 }

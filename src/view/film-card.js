@@ -1,5 +1,7 @@
 import AbstractView from './abstract-view';
 
+import {getDuration} from '../util';
+
 const createFilmCard = (film) => {
 
   const getActiveClass = (property) => {
@@ -7,16 +9,18 @@ const createFilmCard = (film) => {
   };
 
   const {title, raiting, date, duration, genre, poster, description, comments} = film;
+  const clippedDescription = (description.length > 140) ? `${description.slice(0, 139)}...` : description;
+
   return `<article class="film-card">
   <h3 class="film-card__title">${title}</h3>
   <p class="film-card__rating">${raiting}</p>
   <p class="film-card__info">
     <span class="film-card__year">${date.getFullYear()}</span>
-    <span class="film-card__duration">${duration}</span>
+    <span class="film-card__duration">${getDuration(duration)}</span>
     <span class="film-card__genre">${genre.join(` `)}</span>
   </p>
   <img src="${poster}" alt="" class="film-card__poster">
-  <p class="film-card__description">${description}</p>
+  <p class="film-card__description">${clippedDescription}</p>
   <a class="film-card__comments">${comments.length} ${comments.length === 1 ? `comment` : `comments`}</a>
   <div class="film-card__controls">
   <button class="film-card__controls-item button film-card__controls-item--add-to-watchlist${getActiveClass(`isInWatchlist`)}" type="button">Add to watchlist</button>
