@@ -9,7 +9,7 @@ const createFilmsCatalog = () => {
   </section>`;
 };
 
-export default class SiteCatalog extends AbstractView {
+export default class FilmsCatalog extends AbstractView {
   getTemplate() {
     return createFilmsCatalog();
   }

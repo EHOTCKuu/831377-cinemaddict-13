@@ -15,7 +15,7 @@ const createSiteSort = (sortType) => {
 export default class SiteSort extends AbstractView {
   constructor(sortType) {
     super();
-    this._sortTypeChangeHandler = this._sortTypeChangeHandler.bind(this);
+    this._onSortTypeChange = this._onSortTypeChange.bind(this);
     this.sortType = sortType;
   }
 
@@ -23,7 +23,7 @@ export default class SiteSort extends AbstractView {
     return createSiteSort(this.sortType);
   }
 
-  _sortTypeChangeHandler(evt) {
+  _onSortTypeChange(evt) {
     if (evt.target.tagName !== `A`) {
       return;
     }
@@ -34,6 +34,6 @@ export default class SiteSort extends AbstractView {
 
   setSortTypeChangeHandler(cb) {
     this._callback.sortTypeChange = cb;
-    this.getElement().addEventListener(`click`, this._sortTypeChangeHandler);
+    this.getElement().addEventListener(`click`, this._onSortTypeChange);
   }
 }

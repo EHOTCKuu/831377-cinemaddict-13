@@ -1,21 +1,18 @@
-import {CATEGORIES} from "../const.js";
+import {Category} from "../const.js";
 
 import AbstractView from './abstract-view';
 
 const createSiteMenu = (films, currentSort) => {
-  let inWatchlist = 0;
-  let inHistory = 0;
-  let favourites = 0;
-  films.forEach((film) => {
-    if (film.isInWatchlist) {
-      inWatchlist++;
-    }
-    if (film.isInHistory) {
-      inHistory++;
-    }
-    if (film.isFavourite) {
-      favourites++;
-    }
+  const stats = films.reduce((acc, current) => {
+    return {
+      inWatchlist: acc.inWatchlist + current.isInWatchlist,
+      inHistory: acc.inHistory + current.isInHistory,
+      favourites: acc.favourites + current.isFavourite,
+    };
+  }, {
+    inWatchlist: 0,
+    inHistory: 0,
+    favourites: 0
   });
 
   const getActiveHtmlClass = (elementFilterType) => {
@@ -24,10 +21,10 @@ const createSiteMenu = (films, currentSort) => {
 
   return `<nav class="main-navigation">
   <div class="main-navigation__items">
-  <a href="#all" class="main-navigation__item${getActiveHtmlClass(CATEGORIES.All)}" data-filter-type="${CATEGORIES.All}">All movies</a>
-  <a href="#watchlist" class="main-navigation__item${getActiveHtmlClass(CATEGORIES.WATCHLIST)}" data-filter-type="${CATEGORIES.WATCHLIST}">Watchlist <span class="main-navigation__item-count">${inWatchlist}</span></a>
-  <a href="#history" class="main-navigation__item${getActiveHtmlClass(CATEGORIES.HISTORY)}" data-filter-type="${CATEGORIES.HISTORY}">History <span class="main-navigation__item-count">${inHistory}</span></a>
-  <a href="#favorites" class="main-navigation__item${getActiveHtmlClass(CATEGORIES.FAVOURITES)}" data-filter-type="${CATEGORIES.FAVOURITES}">Favorites <span class="main-navigation__item-count">${favourites}</span></a>
+    <a href="#all" class="main-navigation__item${getActiveHtmlClass(Category.All)}" data-filter-type="${Category.All}">All movies</a>
+    <a href="#watchlist" class="main-navigation__item${getActiveHtmlClass(Category.WATCHLIST)}" data-filter-type="${Category.WATCHLIST}">Watchlist <span class="main-navigation__item-count">${stats.inWatchlist}</span></a>
+    <a href="#history" class="main-navigation__item${getActiveHtmlClass(Category.HISTORY)}" data-filter-type="${Category.HISTORY}">History <span class="main-navigation__item-count">${stats.inHistory}</span></a>
+    <a href="#favorites" class="main-navigation__item${getActiveHtmlClass(Category.FAVOURITES)}" data-filter-type="${Category.FAVOURITES}">Favorites <span class="main-navigation__item-count">${stats.favourites}</span></a>
   </div>
   <a href="#stats" class="main-navigation__additional">Stats</a>
 </nav>`;
@@ -36,12 +33,13 @@ const createSiteMenu = (films, currentSort) => {
 export default class SiteMenu extends AbstractView {
   constructor(films, currentFilter) {
     super();
-    this._currentFilter = currentFilter;
-    this._FilterChangeHandler = this._FilterChangeHandler.bind(this);
     this._films = films;
+    this._currentFilter = currentFilter;
+    this._onFilterChange = this._onFilterChange.bind(this);
+    this._onStatsButtonClick = this._onStatsButtonClick.bind(this);
   }
 
-  _FilterChangeHandler(evt) {
+  _onFilterChange(evt) {
     if (evt.target.tagName !== `A`) {
       return;
     }
@@ -51,10 +49,20 @@ export default class SiteMenu extends AbstractView {
 
   setFilterChangeHandler(cb) {
     this._callback.filterTypeChange = cb;
-    this.getElement().querySelector(`.main-navigation__items`).addEventListener(`click`, this._FilterChangeHandler);
+    this.getElement().querySelector(`.main-navigation__items`).addEventListener(`click`, this._onFilterChange);
   }
 
   getTemplate() {
     return createSiteMenu(this._films, this._currentFilter);
+  }
+
+  _onStatsButtonClick(evt) {
+    evt.preventDefault();
+    this._callback.siteStateChange(evt);
+  }
+
+  setStatsButtonClickHandler(cb) {
+    this._callback.siteStateChange = cb;
+    this.getElement().querySelector(`.main-navigation__additional`).addEventListener(`click`, this._onStatsButtonClick);
   }
 }

@@ -17,16 +17,12 @@ export default class Comment {
     this._isCommentDisabled = false;
 
     this._deleteComment = this._deleteComment.bind(this);
-    this.shake = this.shake.bind(this);
+    this.onUserCommentError = this.onUserCommentError.bind(this);
   }
 
   init(container) {
-
     this._commentView = new CommentView(this._comment);
-
     this._commentView.setDeleteButtonClickHandler(this._deleteComment);
-
-
     render(container, this._commentView);
   }
 
@@ -46,7 +42,7 @@ export default class Comment {
     this._isCommentDisabled = !this._isCommentDisabled;
   }
 
-  shake() {
+  onUserCommentError() {
     const comment = this._commentView.getElement();
     comment.style.animation = `shake ${SHAKE_DURATION / 1000}s`;
     setTimeout(() => {

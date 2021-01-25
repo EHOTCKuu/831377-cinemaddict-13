@@ -1,5 +1,5 @@
 import {render, remove, filter} from '../util.js';
-import {SortType, UserAction, ModelMethod} from "../const.js";
+import {SortType, UserAction, ModelMethod, FilmCardContainer} from "../const.js";
 
 import LoadingView from '../view/loading';
 import SiteSortView from '../view/site-sort';
@@ -9,7 +9,7 @@ import TopRaitedContainerView from '../view/top-raited-container';
 import MostCommentedContainerView from '../view/most-commented-container';
 import NoFilmsView from '../view/no-film';
 
-import FilmCardPresenter from './film-card-presenter';
+import FilmCardPresenter from './card-presenter';
 
 export default class Catalog {
   constructor(filmsmodel, filterModel, commentsModel) {
@@ -23,9 +23,7 @@ export default class Catalog {
     this._onfilmUpdate = this._onfilmUpdate.bind(this);
     this._onFilterUpdate = this._onFilterUpdate.bind(this);
     this._onFilmsLoad = this._onFilmsLoad.bind(this);
-    this._filmsModel.addObserver(ModelMethod.UPDATE_FILM, this._onfilmUpdate);
-    this._filmsModel.addObserver(ModelMethod.SET_FILMS, this._onFilmsLoad);
-    this._filterModel.addObserver(ModelMethod.UPDATE_FILTER, this._onFilterUpdate);
+
     this._siteSortView = null;
     this._noFilmsView = null;
     this._userIconView = null;
@@ -49,14 +47,28 @@ export default class Catalog {
 
     this._onShowMoreButtonClick = this._onShowMoreButtonClick.bind(this);
     this._onSortTypeChange = this._onSortTypeChange.bind(this);
+    this.updateMostCommentedBlock = this.updateMostCommentedBlock.bind(this);
   }
 
-  init(user, container) {
-    this._user = user;
-    this._siteMain = container;
+  init(container = this._container) {
+    this._container = container;
     this._presenterGroupNames = Object.keys(this._filmCardPresenterGroups);
-
+    this._siteMain = container;
+    this._filmsModel.addObserver(ModelMethod.UPDATE_FILM, this._onfilmUpdate);
+    this._filmsModel.addObserver(ModelMethod.SET_FILMS, this._onFilmsLoad);
+    this._filterModel.addObserver(ModelMethod.UPDATE_FILTER, this._onFilterUpdate);
     this._renderCatalog();
+  }
+
+  destroy() {
+    this._clearCatalog({resetRenderedFilms: true, resetSort: true});
+    remove(this._topRaitedContainerView);
+    remove(this._mostCommentedContainerView);
+    remove(this._siteCatalog);
+
+    this._filmsModel.removeObserver(ModelMethod.UPDATE_FILM, this._onfilmUpdate);
+    this._filmsModel.removeObserver(ModelMethod.SET_FILMS, this._onFilmsLoad);
+    this._filterModel.removeObserver(ModelMethod.UPDATE_FILTER, this._onFilterUpdate);
   }
 
   _updatePresenters(film) {
@@ -95,16 +107,22 @@ export default class Catalog {
     remove(this._noFilmsView);
     remove(this._showMoreButton);
     remove(this._loadingView);
+    remove(this._topRaitedContainerView);
+    remove(this._mostCommentedContainerView);
 
-    if (resetRenderedFilms) {
-      this._renderedFilms = this._FILMS_CARDS_NUMBER;
-    } else {
-      this._renderedFilms = Math.min(this._renderedFilms, this._getFilms().length);
-    }
+    this._renderedFilms = resetRenderedFilms ? this._renderedFilms = this._FILMS_CARDS_NUMBER : Math.min(this._renderedFilms, this._getFilms().length);
 
     if (resetSort) {
       this._currentSortType = SortType.DEFAULT;
     }
+  }
+
+  updateMostCommentedBlock(filmId) {
+    if (!this._getFilms(SortType.COMMENTS).slice(0, this._FILMS_MOST_COMMENTED_CARDS_NUMBER).some((film) => film.id === filmId)) {
+      return;
+    }
+    remove(this._mostCommentedContainerView);
+    this._renderMostCommentedFilms();
   }
 
   _renderLoading() {
@@ -124,17 +142,11 @@ export default class Catalog {
     const chosenSortType = sortType || this._currentSortType;
     switch (chosenSortType) {
       case SortType.DATE:
-        return filteredFilms.sort((previous, current) => {
-          return current.date - previous.date;
-        });
+        return filteredFilms.sort((previous, current) => current.date - previous.date);
       case SortType.RAITING:
-        return filteredFilms.sort((previous, current) => {
-          return current.raiting - previous.raiting;
-        });
+        return filteredFilms.sort((previous, current) => current.raiting - previous.raiting);
       case SortType.COMMENTS:
-        return filteredFilms.sort((previous, current) => {
-          return current.comments.length - previous.comments.length;
-        });
+        return filteredFilms.sort((previous, current) => current.comments.length - previous.comments.length);
       default:
         return filteredFilms;
     }
@@ -143,13 +155,13 @@ export default class Catalog {
   _onViewAction(eventType, update) {
     switch (eventType) {
       case UserAction.UPDATE_FILM_CATEGORY:
-        this._filmsModel.updateFilm(update);
+        this._filmsModel.updateFilm({filmToUpdate: update});
         break;
       case UserAction.REPLACE_FILM:
-        this._filmsModel.replaceFilm(update);
+        this._filmsModel.replaceFilm({filmToUpdate: update});
         break;
       case UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER:
-        this._filmsModel.updateFilm(update, false)
+        this._filmsModel.updateFilm({filmToUpdate: update, isNotificationNeeded: false})
         .then(() => {
           this._clearCatalog();
           this._renderCatalog();
@@ -172,13 +184,13 @@ export default class Catalog {
   }
 
   _renderCard(container, film, block) {
-    const filmPresenter = new FilmCardPresenter(this._commentsModel, this._onViewAction, this._closeAllPopups, this._filterModel);
+    const filmPresenter = new FilmCardPresenter(this._commentsModel, this._onViewAction, this._closeAllPopups, this._filterModel, this.updateMostCommentedBlock);
     filmPresenter.init(film, container);
     switch (block) {
-      case `raited`:
+      case FilmCardContainer.RAITED:
         this._filmCardPresenterGroups.raited[film.id] = filmPresenter;
         break;
-      case `commented`:
+      case FilmCardContainer.COMMENTED:
         this._filmCardPresenterGroups.commented[film.id] = filmPresenter;
         break;
       default:
@@ -231,31 +243,25 @@ export default class Catalog {
     }
   }
 
-  _renderTopRaitedContainer() {
-    render(this._siteCatalog, this._topRaitedContainerView);
-  }
-
-  _renderMostCommentedContainer() {
-    render(this._siteCatalog, this._mostCommentedContainerView);
-  }
-
   _renderTopRaitedFilms() {
-    if (this._getFilms(SortType.RAITING)[0].raiting === 0) {
+    if (!this._getFilms(SortType.RAITING)[0].raiting) {
       return;
     }
+    render(this._siteCatalog, this._topRaitedContainerView);
     const topRaitedFilmsContainer = this._siteCatalog.getElement().querySelector(`.films-list--extra .films-list__container`);
     for (let i = 0; i < Math.min(this._FILMS_TOP_RAITED_CARDS_NUMBER, this._getFilms(SortType.RAITING).length); i++) {
-      this._renderCard(topRaitedFilmsContainer, this._getFilms(SortType.RAITING)[i], `raited`);
+      this._renderCard(topRaitedFilmsContainer, this._getFilms(SortType.RAITING)[i], FilmCardContainer.RAITED);
     }
   }
 
   _renderMostCommentedFilms() {
-    if (this._getFilms(SortType.COMMENTS)[0].comments.length === 0) {
+    if (!this._getFilms(SortType.COMMENTS)[0].comments.length) {
       return;
     }
+    render(this._siteCatalog, this._mostCommentedContainerView);
     const mostCommentedFilmsContainer = this._siteCatalog.getElement().querySelector(`.films-list--commented .films-list__container`);
     for (let i = 0; i < Math.min(this._FILMS_MOST_COMMENTED_CARDS_NUMBER, this._getFilms(SortType.COMMENTS).length); i++) {
-      this._renderCard(mostCommentedFilmsContainer, this._getFilms(SortType.COMMENTS)[i], `commented`);
+      this._renderCard(mostCommentedFilmsContainer, this._getFilms(SortType.COMMENTS)[i], FilmCardContainer.COMMENTED);
     }
   }
 
@@ -269,7 +275,7 @@ export default class Catalog {
       this._siteCatalog = new SiteCatalogView();
     }
 
-    if (this._getFilms().length < 1) {
+    if (!this._getFilms().length) {
       this._renderNoFilms();
       return;
     }
@@ -282,8 +288,6 @@ export default class Catalog {
 
     this._renderShowMoreButton();
 
-    this._renderTopRaitedContainer();
-    this._renderMostCommentedContainer();
     this._renderTopRaitedFilms();
     this._renderMostCommentedFilms();
   }

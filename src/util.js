@@ -1,4 +1,4 @@
-import {CATEGORIES} from './const';
+import {Category, RenderPosition} from './const';
 
 import AbstractView from './view/abstract-view';
 
@@ -15,7 +15,7 @@ export const createElement = (template) => {
   return newElement.firstChild;
 };
 
-export const render = (container, element, place = `beforeend`) => {
+export const render = (container, element, place = RenderPosition.BEFOREEND) => {
 
   if (container instanceof AbstractView) {
     container = container.getElement();
@@ -25,10 +25,10 @@ export const render = (container, element, place = `beforeend`) => {
   }
 
   switch (place) {
-    case `beforeend`:
+    case RenderPosition.BEFOREEND:
       container.append(element);
       break;
-    case `afterbegin`:
+    case RenderPosition.AFTERBEGIN:
       container.prepend(element);
       break;
   }
@@ -41,10 +41,10 @@ export const isKeyPressed = (evt, cb, keyName) => {
 };
 
 export const filter = {
-  [CATEGORIES.All]: (films) => films,
-  [CATEGORIES.WATCHLIST]: (films) => films.filter((film) => (film.isInWatchlist)),
-  [CATEGORIES.HISTORY]: (films) => films.filter((film) => (film.isInHistory)),
-  [CATEGORIES.FAVOURITES]: (films) => films.filter((film) => (film.isFavourite))
+  [Category.All]: (films) => films,
+  [Category.WATCHLIST]: (films) => films.filter((film) => (film.isInWatchlist)),
+  [Category.HISTORY]: (films) => films.filter((film) => (film.isInHistory)),
+  [Category.FAVOURITES]: (films) => films.filter((film) => (film.isFavourite))
 };
 
 export const updateUserPropertyArray = (idArr, filmId) => {
@@ -62,11 +62,7 @@ export const updateUserPropertyArray = (idArr, filmId) => {
 export const getDuration = (duration) => {
   const hours = duration / 60;
   const minutes = duration % 60;
-  if (hours < 1) {
-    return `${minutes}m`;
-  } else {
-    return `${Math.floor(hours)}h ${minutes}m`;
-  }
+  return (hours < 1) ? `${minutes}m` : `${Math.floor(hours)}h ${minutes}m`;
 };
 
 export const replace = (newElement, oldElement) => {
@@ -95,4 +91,22 @@ export const remove = (element) => {
   }
   element.getElement().remove();
   element.removeElement();
+};
+
+export const isOnline = () => {
+  return window.navigator.onLine;
+};
+
+const SHOW_TIME = 4000;
+
+export const renderToast = (message) => {
+  const toast = document.createElement(`div`);
+  toast.textContent = message;
+  toast.classList.add(`toast`);
+
+  document.body.append(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, SHOW_TIME);
 };

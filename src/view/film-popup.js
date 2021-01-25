@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 
-import {EMOTIONS, EMOTION_PICS, CATEGORIES} from '../const.js';
+import {EMOTIONS, Category} from '../const.js';
 import {getDuration} from '../util';
 
 import Smart from './smart-view';
@@ -20,7 +20,7 @@ const createFilmPopup = (data) => {
     </label>`;
   }).join(``);
 
-  const smileImg = chosenSmile ? `<img src="${EMOTION_PICS[chosenSmile]}" width="55" height="55" alt="emoji-${chosenSmile}">` : ``;
+  const smileImg = chosenSmile ? `<img src="./images/emoji/${chosenSmile}.png" width="55" height="55" alt="emoji-${chosenSmile}">` : ``;
 
   const commentValue = userComment || ``;
 
@@ -118,19 +118,20 @@ const createFilmPopup = (data) => {
 const SHAKE_DURATION = 500;
 
 export default class FilmPopup extends Smart {
-  constructor(film, cardUpdateHandler, renderCommentsCb) {
+  constructor(film, onCardUpdate, renderCommentsCb) {
     super();
+    this._onCardUpdate = onCardUpdate;
     this._renderComments = renderCommentsCb;
-    this._cardUpdateHandler = cardUpdateHandler;
     this._data = this._parseFilmTodata(film);
     this._isCommentFormDisabled = false;
-    this._crossClickHandler = this._crossClickHandler.bind(this);
-    this._commentChangeHandler = this._commentChangeHandler.bind(this);
-    this._emojiInputClickHandler = this._emojiInputClickHandler.bind(this);
-    this._watchlistButtonClickHandler = this._watchlistButtonClickHandler.bind(this);
-    this._historyButtonClickHandler = this._historyButtonClickHandler.bind(this);
-    this._favouritesButtonClickHandler = this._favouritesButtonClickHandler.bind(this);
-
+    this._isOnlineListening = false;
+    this._onCrossClick = this._onCrossClick.bind(this);
+    this._onCommentChange = this._onCommentChange.bind(this);
+    this._onEmojiInputClick = this._onEmojiInputClick.bind(this);
+    this._onWatchlistButtonClick = this._onWatchlistButtonClick.bind(this);
+    this._onHistoryButtonClick = this._onHistoryButtonClick.bind(this);
+    this._onFavouritesButtonClick = this._onFavouritesButtonClick.bind(this);
+    this.onCommentFormError = this.onCommentFormError.bind(this);
     this._setHandlers();
   }
 
@@ -158,12 +159,20 @@ export default class FilmPopup extends Smart {
     return data;
   }
 
-  _commentChangeHandler(evt) {
+  _onCommentChange(evt) {
+    if (evt.target.value.length && !this._isOnlineListening) {
+      this._isOnlineListening = true;
+      window.addEventListener(`offline`, this.onCommentFormError);
+    }
+    if (evt.target.value.length === 0 && this._isOnlineListening) {
+      this._isOnlineListening = false;
+      window.removeEventListener(`offline`, this.onCommentFormError);
+    }
     evt.preventDefault();
     this.updateData({userComment: evt.target.value}, true);
   }
 
-  _emojiInputClickHandler(evt) {
+  _onEmojiInputClick(evt) {
     if (evt.target.tagName !== `INPUT` || evt.target.value === this._data.chosenSmile) {
       return;
     }
@@ -177,27 +186,27 @@ export default class FilmPopup extends Smart {
     this.updateData({comments: sentComments});
   }
 
-  _watchlistButtonClickHandler() {
-    this._cardUpdateHandler(CATEGORIES.WATCHLIST);
+  _onWatchlistButtonClick() {
+    this._onCardUpdate(Category.WATCHLIST);
     this._data.isInWatchlist = !this._data.isInWatchlist;
   }
 
-  _historyButtonClickHandler() {
-    this._cardUpdateHandler(CATEGORIES.HISTORY);
+  _onHistoryButtonClick() {
+    this._onCardUpdate(Category.HISTORY);
     this._data.isInHistory = !this._data.isInHistory;
   }
 
-  _favouritesButtonClickHandler() {
-    this._cardUpdateHandler(CATEGORIES.FAVOURITES);
+  _onFavouritesButtonClick() {
+    this._onCardUpdate(Category.FAVOURITES);
     this._data.isInFavourites = !this._data.isInFavourites;
   }
 
   _setHandlers() {
-    this.getElement().querySelector(`.film-details__comment-input`).addEventListener(`input`, this._commentChangeHandler);
-    this.getElement().querySelector(`.film-details__emoji-list`).addEventListener(`click`, this._emojiInputClickHandler);
-    this.getElement().querySelector(`#watchlist`).addEventListener(`click`, this._watchlistButtonClickHandler);
-    this.getElement().querySelector(`#watched`).addEventListener(`click`, this._historyButtonClickHandler);
-    this.getElement().querySelector(`#favorite`).addEventListener(`click`, this._favouritesButtonClickHandler);
+    this.getElement().querySelector(`.film-details__comment-input`).addEventListener(`input`, this._onCommentChange);
+    this.getElement().querySelector(`.film-details__emoji-list`).addEventListener(`click`, this._onEmojiInputClick);
+    this.getElement().querySelector(`#watchlist`).addEventListener(`click`, this._onWatchlistButtonClick);
+    this.getElement().querySelector(`#watched`).addEventListener(`click`, this._onHistoryButtonClick);
+    this.getElement().querySelector(`#favorite`).addEventListener(`click`, this._onFavouritesButtonClick);
   }
 
   _restoreHandlers() {
@@ -229,14 +238,14 @@ export default class FilmPopup extends Smart {
     this._scroll = this.getElement().scrollTop;
   }
 
-  _crossClickHandler(evt) {
+  _onCrossClick(evt) {
     evt.preventDefault();
     this._callback.crossClick(evt);
   }
 
   setCrossClickHandler(cb) {
     this._callback.crossClick = cb;
-    this.getElement().querySelector(`.film-details__close-btn`).addEventListener(`click`, this._crossClickHandler);
+    this.getElement().querySelector(`.film-details__close-btn`).addEventListener(`click`, this._onCrossClick);
   }
 
   disableCommentInputs() {
@@ -247,7 +256,7 @@ export default class FilmPopup extends Smart {
     this._isCommentFormDisabled = !this._isCommentFormDisabled;
   }
 
-  shake() {
+  onCommentFormError() {
     const commentForm = this.getElement().querySelector(`.film-details__new-comment`);
     commentForm.style.animation = `shake ${SHAKE_DURATION / 1000}s`;
     setTimeout(() => {

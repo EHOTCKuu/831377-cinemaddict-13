@@ -1,17 +1,18 @@
-import {CATEGORIES, UserAction, ModelMethod} from "../const.js";
+import {Category, UserAction, ModelMethod, ENTER_KEY_CODE} from "../const.js";
 import {replace, remove, render, isKeyPressed} from '../util.js';
 
-import CommentPresenter from './comment-presenter';
+import CommentPresenter from './comment';
 
 import FilmCardView from '../view/film-card';
 import FilmPopupView from '../view/film-popup';
 export default class CardPresenter {
-  constructor(commentsModel, filmChangeCb, closePopupsCb, filterModel) {
+  constructor(commentsModel, filmChangeCb, closePopupsCb, filterModel, updateMostCommentedBlockCb) {
     this._commentsModel = commentsModel;
     this._filterModel = filterModel;
 
     this._commentPresenters = {};
     this._closePopups = closePopupsCb;
+    this._updateMostCommentedBlock = updateMostCommentedBlockCb;
 
     this._card = null;
     this._filmChange = filmChangeCb;
@@ -25,7 +26,7 @@ export default class CardPresenter {
     this._closePopups = closePopupsCb;
     this._pageBody = document.querySelector(`body`);
     this._popup = null;
-    this.cardUpdateHandler = this.cardUpdateHandler.bind(this);
+    this.onCardUpdate = this.onCardUpdate.bind(this);
     this.closePopup = this.closePopup.bind(this);
     this._openPopup = this._openPopup.bind(this);
     this._onCardPosterClick = this._onCardPosterClick.bind(this);
@@ -85,7 +86,7 @@ export default class CardPresenter {
   _openPopup(evt) {
     evt.preventDefault();
     this._closePopups();
-    this._popup = new FilmPopupView(this._film, this.cardUpdateHandler, this._renderCommentsToPopup);
+    this._popup = new FilmPopupView(this._film, this.onCardUpdate, this._renderCommentsToPopup);
     this._renderCommentsToPopup();
     render(this._pageBody, this._popup);
     this._popup.setCrossClickHandler(this._onPopupCrossClick);
@@ -95,23 +96,25 @@ export default class CardPresenter {
   }
 
   _onCardWatchlistClick() {
-    const action = (this._filterModel.getFilter() !== CATEGORIES.All && this._film.isInWatchlist) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
+    const action = (this._filterModel.getFilter() !== Category.All && this._film.isInWatchlist) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
     this._filmChange(action, Object.assign(
         {},
         this._film,
         {
-          isInWatchlist: !this._film.isInWatchlist
+          isInWatchlist: !this._film.isInWatchlist,
+          isSynced: false
         }
     ));
   }
 
   _onCardFavouritesClick() {
-    const action = (this._filterModel.getFilter() !== CATEGORIES.All && this._film.isInWatchlist) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
+    const action = (this._filterModel.getFilter() !== Category.All && this._film.isInWatchlist) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
     this._filmChange(action, Object.assign(
         {},
         this._film,
         {
-          isFavourite: !this._film.isFavourite
+          isFavourite: !this._film.isFavourite,
+          isSynced: false
         }
     ));
   }
@@ -146,16 +149,17 @@ export default class CardPresenter {
             comments: Object.keys(this._commentPresenters)
           }
       ));
+      this._updateMostCommentedBlock(this._film.id);
     }
   }
 
   _onCommentDeleteError(commentId) {
-    this._commentPresenters[commentId].disableDeleteButton();
-    this._commentPresenters[commentId].shake();
+    this._commentPresenters[commentId].changeDeleteButtonState();
+    this._commentPresenters[commentId].onUserCommentError();
   }
 
   _onCommentAdd(evt) {
-    if (evt.keyCode === 13 && evt.ctrlKey) {
+    if (evt.keyCode === ENTER_KEY_CODE && (evt.ctrlKey || evt.metaKey)) {
       const commentData = this._popup.getNewCommentData();
       if (commentData === null) {
         return;
@@ -172,7 +176,7 @@ export default class CardPresenter {
 
   _onCommentAddError() {
     this._popup.disableCommentInputs();
-    this._popup.shake();
+    this._popup.onCommentFormError();
   }
 
   addComment(response) {
@@ -196,6 +200,7 @@ export default class CardPresenter {
       this._popup.scrollToY();
 
       this._filmChange(UserAction.REPLACE_FILM, film);
+      this._updateMostCommentedBlock(this._film.id);
     }
   }
 
@@ -219,12 +224,14 @@ export default class CardPresenter {
   }
 
   _onCardToHistoryClick() {
-    const action = (this._filterModel.getFilter() !== CATEGORIES.All && this._film.isInHistory) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
+    const action = (this._filterModel.getFilter() !== Category.All && this._film.isInHistory) ? UserAction.UPDATE_FILM_CATEGORY_WITH_RERENDER : UserAction.UPDATE_FILM_CATEGORY;
     this._filmChange(action, Object.assign(
         {},
         this._film,
         {
-          isInHistory: !this._film.isInHistory
+          isInHistory: !this._film.isInHistory,
+          isSynced: false,
+          watchingDate: this._film.isInHistory ? this._film.watchingDate : new Date()
         }
     ));
   }
@@ -233,15 +240,15 @@ export default class CardPresenter {
     this._openPopup(evt);
   }
 
-  cardUpdateHandler(category) {
+  onCardUpdate(category) {
     switch (category) {
-      case CATEGORIES.WATCHLIST:
+      case Category.WATCHLIST:
         this._onCardWatchlistClick();
         break;
-      case CATEGORIES.HISTORY:
+      case Category.HISTORY:
         this._onCardToHistoryClick();
         break;
-      case CATEGORIES.FAVOURITES:
+      case Category.FAVOURITES:
         this._onCardFavouritesClick();
         break;
     }

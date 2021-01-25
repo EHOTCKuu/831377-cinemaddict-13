@@ -40,12 +40,14 @@ export default class CommentsModel extends Observer {
   }
 
   getErrorComment() {
-    return {
+    const errorComment = {
       id: `!!!`,
       author: `site`,
       date: new Date(),
       emotion: `angry`,
       text: `Не удалось загрузить комментарии.`
     };
+    this._comments = [errorComment];
+    return errorComment;
   }
 }

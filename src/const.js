@@ -1,3 +1,5 @@
+export const ENTER_KEY_CODE = 13;
+
 export const UserAction = {
   DELETE_COMMENT: `DELETE_COMMENT`,
   ADD_COMMENT: `ADD_COMMENT`,
@@ -19,10 +21,11 @@ export const ModelMethod = {
   UPDATE_FILTER: `updateFilter`,
   ADD_COMMENT: `addComment`,
   SET_FILMS: `setFilms`,
+  UPDATE_USER_RAITING: `updateRaiting`,
   DELETE_COMMENT: `deleteComment`
 };
 
-export const CATEGORIES = {
+export const Category = {
   WATCHLIST: `watchlist`,
   HISTORY: `history`,
   All: `all`,
@@ -43,15 +46,31 @@ export const EMOTIONS = [
   `angry`
 ];
 
-export const EMOTION_PICS = {
-  smile: `./images/emoji/smile.png`,
-  sleeping: `./images/emoji/sleeping.png`,
-  puke: `./images/emoji/puke.png`,
-  angry: `./images/emoji/angry.png`
-};
-
 export const UserRaiting = {
   NOVICE: `novice`,
   FAN: `fan`,
   MOVIE_BUFF: `movie buff`
+};
+
+export const SiteState = {
+  TO_MOVIES: `TO_MOVIES`,
+  TO_STATS: `TO_STATS`
+};
+
+export const StatsPeriod = {
+  ALL: `all-time`,
+  TODAY: `day`,
+  WEEK: `week`,
+  MONTH: `month`,
+  YEAR: `year`
+};
+
+export const FilmCardContainer = {
+  RAITED: `raited`,
+  COMMENTED: `commented`
+};
+
+export const RenderPosition = {
+  BEFOREEND: `beforeend`,
+  AFTERBEGIN: `afterbegin`
 };
